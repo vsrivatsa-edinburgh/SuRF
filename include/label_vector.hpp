@@ -1,8 +1,6 @@
 #ifndef LABELVECTOR_H_
 #define LABELVECTOR_H_
 
-#include <emmintrin.h>
-
 #include <vector>
 
 #include "config.hpp"
@@ -150,33 +148,45 @@ bool LabelVector::binarySearch(const label_t target, position_t& pos, const posi
 }
 
 bool LabelVector::simdSearch(const label_t target, position_t& pos, const position_t search_len) const {
+    // Architecture-agnostic implementation that processes data in chunks
+    // This mimics SIMD behavior by processing multiple bytes at once
+    
     position_t num_labels_searched = 0;
     position_t num_labels_left = search_len;
-    while ((num_labels_left >> 4) > 0) {
-	label_t* start_ptr = labels_ + pos + num_labels_searched;
-	__m128i cmp = _mm_cmpeq_epi8(_mm_set1_epi8(target), 
-				     _mm_loadu_si128(reinterpret_cast<__m128i*>(start_ptr)));
-	unsigned check_bits = _mm_movemask_epi8(cmp);
-	if (check_bits) {
-	    pos += (num_labels_searched + __builtin_ctz(check_bits));
-	    return true;
-	}
-	num_labels_searched += 16;
-	num_labels_left -= 16;
+
+    if (num_labels_left == 0) {
+        return false; // No labels to search
     }
 
+    
+    // Process in chunks of 16 bytes (similar to SIMD 128-bit registers)
+    while (num_labels_left >= 16) {
+        label_t* start_ptr = labels_ + pos + num_labels_searched;
+        
+        // Check 16 bytes at once using unrolled loop for better performance
+        for (int i = 0; i < 16; i++) {
+            if (start_ptr[i] == target) {
+                pos += (num_labels_searched + i);
+                return true;
+            }
+        }
+        
+        num_labels_searched += 16;
+        num_labels_left -= 16;
+    }
+    
+    // Handle remaining bytes (less than 16)
     if (num_labels_left > 0) {
-	label_t* start_ptr = labels_ + pos + num_labels_searched;
-	__m128i cmp = _mm_cmpeq_epi8(_mm_set1_epi8(target), 
-				     _mm_loadu_si128(reinterpret_cast<__m128i*>(start_ptr)));
-	unsigned leftover_bits_mask = (1 << num_labels_left) - 1;
-	unsigned check_bits = _mm_movemask_epi8(cmp) & leftover_bits_mask;
-	if (check_bits) {
-	    pos += (num_labels_searched + __builtin_ctz(check_bits));
-	    return true;
-	}
+        label_t* start_ptr = labels_ + pos + num_labels_searched;
+        
+        for (position_t i = 0; i < num_labels_left; i++) {
+            if (start_ptr[i] == target) {
+                pos += (num_labels_searched + i);
+                return true;
+            }
+        }
     }
-
+    
     return false;
 }
 

@@ -26,7 +26,7 @@ The RocksDB experiments with SuRF can be found [here](https://github.com/efficie
 ## Simple Example
 A simple example can be found [here](https://github.com/efficient/SuRF/blob/master/simple_example.cpp). To run the example:
 ```
-g++ -mpopcnt -std=c++11 simple_example.cpp
+g++ -std=c++11 simple_example.cpp
 ./a.out
 ```
 Note that the key list passed to the SuRF constructor must be SORTED.

@@ -15,7 +15,7 @@ namespace surftest {
 
 static const std::string kFilePath = "../../../test/words.txt";
 static const int kWordTestSize = 234369;
-static const uint64_t kIntTestStart = 10;
+static const uint64_t kIntTestStart __attribute__((unused)) = 10;
 static const int kIntTestBound = 1000001;
 static const uint64_t kIntTestSkip = 10;
 static const int kNumSuffixType = 4;

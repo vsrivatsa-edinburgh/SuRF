@@ -14,12 +14,33 @@ namespace surf {
 
 class SuRFBuilder {
 public: 
-    SuRFBuilder() : sparse_start_level_(0), suffix_type_(kNone) {};
+    SuRFBuilder() : sparse_start_level_(0), suffix_type_(kNone), has_keys_(false) {};
     explicit SuRFBuilder(bool include_dense, uint32_t sparse_dense_ratio,
 			 SuffixType suffix_type, level_t hash_suffix_len, level_t real_suffix_len)
 	: include_dense_(include_dense), sparse_dense_ratio_(sparse_dense_ratio),
 	  sparse_start_level_(0), suffix_type_(suffix_type),
-          hash_suffix_len_(hash_suffix_len), real_suffix_len_(real_suffix_len) {};
+          hash_suffix_len_(hash_suffix_len), real_suffix_len_(real_suffix_len), has_keys_(false) {};
+
+    // Copy constructor
+    SuRFBuilder(const SuRFBuilder& other)
+        : include_dense_(other.include_dense_),
+          sparse_dense_ratio_(other.sparse_dense_ratio_),
+          sparse_start_level_(other.sparse_start_level_),
+          labels_(other.labels_),
+          child_indicator_bits_(other.child_indicator_bits_),
+          louds_bits_(other.louds_bits_),
+          bitmap_labels_(other.bitmap_labels_),
+          bitmap_child_indicator_bits_(other.bitmap_child_indicator_bits_),
+          prefixkey_indicator_bits_(other.prefixkey_indicator_bits_),
+          suffix_type_(other.suffix_type_),
+          hash_suffix_len_(other.hash_suffix_len_),
+          real_suffix_len_(other.real_suffix_len_),
+          suffixes_(other.suffixes_),
+          suffix_counts_(other.suffix_counts_),
+          node_counts_(other.node_counts_),
+          is_last_item_terminator_(other.is_last_item_terminator_),
+          last_inserted_key_(other.last_inserted_key_),
+          has_keys_(other.has_keys_) {};
 
     ~SuRFBuilder() {};
 
@@ -28,6 +49,22 @@ public:
     // After build, the member vectors are used in SuRF constructor.
     // REQUIRED: provided key list must be sorted.
     void build(const std::vector<std::string>& keys);
+
+    // Insert a single key into the existing trie structure.
+    // This method allows incremental building of the SuRF.
+    // REQUIRED: key must be inserted in sorted order relative to previously inserted keys.
+    // Returns true if insertion was successful, false if key violates sort order.
+    bool insert(const std::string& key);
+
+    // Finalize the builder after incremental insertions.
+    // This method should be called after all keys have been inserted via insert() method.
+    // It performs the dense level optimization if enabled.
+    void finalize();
+
+    // Check if the builder has any keys inserted
+    bool hasKeys() const {
+        return has_keys_;
+    }
 
     static bool readBit(const std::vector<word_t>& bits, const position_t pos) {
 	assert(pos < (bits.size() * kWordSize));
@@ -171,6 +208,10 @@ private:
     // auxiliary per level bookkeeping vectors
     std::vector<position_t> node_counts_;
     std::vector<bool> is_last_item_terminator_;
+
+    // For incremental insertion, track the last inserted key
+    std::string last_inserted_key_;
+    bool has_keys_;
 };
 
 void SuRFBuilder::build(const std::vector<std::string>& keys) {
@@ -421,6 +462,39 @@ bool SuRFBuilder::isStartOfNode(const level_t level, const position_t pos) const
 bool SuRFBuilder::isTerminator(const level_t level, const position_t pos) const {
     label_t label = labels_[level][pos];
     return ((label == kTerminator) && !readBit(child_indicator_bits_[level], pos));
+}
+
+bool SuRFBuilder::insert(const std::string& key) {
+    // Check if key maintains sorted order
+    if (has_keys_ && key < last_inserted_key_) {
+        return false; // Key violates sort order
+    }
+    
+    // Skip duplicate keys
+    if (has_keys_ && key == last_inserted_key_) {
+        return true; // Key already exists, treat as successful
+    }
+    
+    // Perform the insertion using the same logic as buildSparse
+    level_t level = skipCommonPrefix(key);
+    
+    // For incremental insertion, we need to handle the case where this key
+    // might be the last key differently since we don't know the next key
+    level = insertKeyBytesToTrieUntilUnique(key, std::string(), level);
+    insertSuffix(key, level);
+    
+    // Update tracking variables
+    last_inserted_key_ = key;
+    has_keys_ = true;
+    
+    return true;
+}
+
+void SuRFBuilder::finalize() {
+    if (include_dense_ && has_keys_) {
+        determineCutoffLevel();
+        buildDense();
+    }
 }
 
 } // namespace surf

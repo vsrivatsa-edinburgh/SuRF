@@ -11,6 +11,7 @@ int main() {
 	"far",
 	"fast",
 	"s",
+    "tham"
 	"top",
 	"toy",
 	"trie",
@@ -18,6 +19,7 @@ int main() {
 
     // basic surf
     SuRF* surf = new SuRF(keys);
+    surf->insert("trig");
 
     // use default dense-to-sparse ratio; specify suffix type and length
     SuRF* surf_hash = new SuRF(keys, surf::kHash, 8, 0);
@@ -29,10 +31,10 @@ int main() {
     //----------------------------------------
     // point queries
     //----------------------------------------
-    std::cout << "Point Query Example: fase" << std::endl;
-    
-    std::string key = "fase";
-    
+
+    std::string key = "thar";
+    std::cout << "Point Query Example: " << key << std::endl;
+
     if (surf->lookupKey(key))
 	std::cout << "False Positive: "<< key << " found in basic SuRF" << std::endl;
     else

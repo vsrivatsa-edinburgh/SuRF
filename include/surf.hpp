@@ -51,7 +51,7 @@ public:
     };
 
 public:
-    SuRF() {};
+    SuRF() : louds_dense_(nullptr), louds_sparse_(nullptr), builder_(nullptr), incremental_mode_(false) {};
 
     //------------------------------------------------------------------
     // Input keys must be SORTED
@@ -71,12 +71,43 @@ public:
 	create(keys, include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
     }
 
-    ~SuRF() {}
+    // Constructor that takes a pre-built SuRFBuilder
+    SuRF(const SuRFBuilder& builder) {
+        createFromBuilder(builder);
+    }
+
+    // Constructor for incremental insertion - creates an empty SuRF ready for insertions
+    SuRF(const bool include_dense, const uint32_t sparse_dense_ratio,
+         const SuffixType suffix_type, const level_t hash_suffix_len, const level_t real_suffix_len) {
+        initializeForIncrementalInsertion(include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
+    }
+
+    ~SuRF() {
+        if (builder_ != nullptr) {
+            delete builder_;
+        }
+    }
 
     void create(const std::vector<std::string>& keys,
 		const bool include_dense, const uint32_t sparse_dense_ratio,
 		const SuffixType suffix_type,
                 const level_t hash_suffix_len, const level_t real_suffix_len);
+
+    void createFromBuilder(const SuRFBuilder& builder);
+
+    // Initialize SuRF for incremental insertion
+    void initializeForIncrementalInsertion(const bool include_dense, const uint32_t sparse_dense_ratio,
+                                         const SuffixType suffix_type, const level_t hash_suffix_len, const level_t real_suffix_len);
+
+    // Insert a single key into the SuRF
+    // REQUIRED: key must be inserted in sorted order relative to previously inserted keys
+    // Returns true if insertion was successful, false if key violates sort order
+    bool insert(const std::string& key);
+
+    // Finalize the SuRF after incremental insertions
+    // This method should be called after all keys have been inserted via insert() method
+    // It builds the final trie structures and optimizes for lookups
+    void finalize();
 
     bool lookupKey(const std::string& key) const;
     // This function searches in a conservative way: if inclusive is true
@@ -119,10 +150,14 @@ public:
 	louds_sparse_->destroy();
     }
 
+    // Check if the SuRF has any keys inserted
+    bool hasKeys() const;
+
 private:
     LoudsDense* louds_dense_;
     LoudsSparse* louds_sparse_;
-    SuRFBuilder* builder_;
+    SuRFBuilder* builder_;  // Used for batch construction or incremental building
+    bool incremental_mode_; // Flag to track if we're in incremental insertion mode
     SuRF::Iter iter_;
     SuRF::Iter iter2_;
 };
@@ -138,9 +173,65 @@ void SuRF::create(const std::vector<std::string>& keys,
     louds_sparse_ = new LoudsSparse(builder_);
     iter_ = SuRF::Iter(this);
     delete builder_;
+    builder_ = nullptr;
+    incremental_mode_ = false;
+}
+
+void SuRF::createFromBuilder(const SuRFBuilder& builder) {
+    // Create LoudsDense and LoudsSparse from the builder
+    louds_dense_ = new LoudsDense(&builder);
+    louds_sparse_ = new LoudsSparse(&builder);
+    iter_ = SuRF::Iter(this);
+    incremental_mode_ = false;
+}
+
+void SuRF::initializeForIncrementalInsertion(const bool include_dense, const uint32_t sparse_dense_ratio,
+                                           const SuffixType suffix_type, const level_t hash_suffix_len, const level_t real_suffix_len) {
+    builder_ = new SuRFBuilder(include_dense, sparse_dense_ratio, suffix_type, hash_suffix_len, real_suffix_len);
+    louds_dense_ = nullptr;
+    louds_sparse_ = nullptr;
+    incremental_mode_ = true;
+}
+
+bool SuRF::insert(const std::string& key) {
+    if (!incremental_mode_ || builder_ == nullptr) {
+        return false; // Not in incremental mode
+    }
+    return builder_->insert(key);
+}
+
+void SuRF::finalize() {
+    if (!incremental_mode_ || builder_ == nullptr) {
+        return; // Not in incremental mode
+    }
+    
+    // Finalize the builder
+    builder_->finalize();
+    
+    // Create the trie structures
+    louds_dense_ = new LoudsDense(builder_);
+    louds_sparse_ = new LoudsSparse(builder_);
+    iter_ = SuRF::Iter(this);
+    
+    // Clean up and exit incremental mode
+    delete builder_;
+    builder_ = nullptr;
+    incremental_mode_ = false;
+}
+
+bool SuRF::hasKeys() const {
+    if (incremental_mode_ && builder_ != nullptr) {
+        return builder_->hasKeys();
+    }
+    // For finalized SuRF, check if we have any structure
+    return louds_dense_ != nullptr && louds_sparse_ != nullptr;
 }
 
 bool SuRF::lookupKey(const std::string& key) const {
+    if (incremental_mode_) {
+        return false; // Cannot perform lookups while in incremental insertion mode
+    }
+    
     position_t connect_node_num = 0;
     if (!louds_dense_->lookupKey(key, connect_node_num))
 	return false;
