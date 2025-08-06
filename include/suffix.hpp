@@ -3,7 +3,7 @@
 
 #include "bitvector.hpp"
 
-#include <assert.h>
+#include <cassert>
 
 #include <vector>
 

@@ -1,8 +1,9 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-#include <stdint.h>
-#include <string.h>
+#include <cstdint>
+#include <cstring>
+#include <string>
 
 namespace surf {
 

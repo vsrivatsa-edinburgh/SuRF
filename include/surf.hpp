@@ -370,7 +370,8 @@ uint64_t SuRF::serializedSize() const {
 }
 
 uint64_t SuRF::getMemoryUsage() const {
-    return (sizeof(SuRF) + louds_dense_->getMemoryUsage() + louds_sparse_->getMemoryUsage());
+    // Approximate base object size + component memory usage
+    return (64 + louds_dense_->getMemoryUsage() + louds_sparse_->getMemoryUsage());
 }
 
 level_t SuRF::getHeight() const {

@@ -1,7 +1,7 @@
 #ifndef SURFBUILDER_H_
 #define SURFBUILDER_H_
 
-#include <assert.h>
+#include <cassert>
 
 #include <string>
 #include <vector>

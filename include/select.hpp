@@ -3,12 +3,12 @@
 
 #include "bitvector.hpp"
 
-#include <assert.h>
+#include <cassert>
 
 #include <vector>
 
 #include "config.hpp"
-#include "popcount.h"
+#include "surfpopcount.h"
 
 namespace surf {
 

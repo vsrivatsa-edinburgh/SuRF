@@ -1,7 +1,7 @@
 #ifndef BITVECTOR_H_
 #define BITVECTOR_H_
 
-#include <assert.h>
+#include <cassert>
 
 #include <vector>
 

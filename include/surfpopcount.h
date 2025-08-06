@@ -2,9 +2,8 @@
 #ifndef _FASTRANK_POPCOUNT_H_
 #define _FASTRANK_POPCOUNT_H_
 
-#include <sys/types.h>
-#include <stdio.h>
-#include <stdint.h>
+#include <cstdio>
+#include <cstdint>
 
 namespace surf {
 
@@ -40,10 +39,9 @@ inline int suxpopcount(uint64_t x) {
 
 // Default to using the GCC builtin popcount.  On architectures
 // with -march popcnt, this compiles to a single popcnt instruction.
-#ifndef popcount
-#define popcount __builtin_popcountl
-//#define popcount suxpopcount
-#endif
+static inline int popcount(unsigned long x) {
+    return __builtin_popcountl(x);
+}
 
 #define popcountsize 64UL
 #define popcountmask (popcountsize - 1)
@@ -169,6 +167,20 @@ inline int selectLinear(uint64_t* bits, uint64_t length, uint64_t x, uint64_t k)
     // We're now certain that the bit we want is stored in bits[x+i]
     return static_cast<int>(i*64 + select64(bits[x+i], static_cast<int>(k)));
 }
+
+// Clean up macros to prevent namespace pollution
+#undef L8
+#undef G2
+#undef G4
+#undef G8
+#undef ONES_STEP_4
+#undef ONES_STEP_8
+#undef MSBS_STEP_8
+#undef INCR_STEP_8
+#undef LEQ_STEP_8
+#undef ZCOMPARE_STEP_8
+#undef popcountsize
+#undef popcountmask
 
 } // namespace surf
 
