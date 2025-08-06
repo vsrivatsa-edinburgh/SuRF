@@ -6,14 +6,14 @@
 
 namespace surf {
 
-using level_t = uint32_t;
-using position_t = uint32_t;
+typedef uint32_t level_t;
+typedef uint32_t position_t;
 static const position_t kMaxPos = UINT32_MAX;
 
-using label_t = uint8_t;
+typedef uint8_t label_t;
 static const position_t kFanout = 256;
 
-using word_t = uint64_t;
+typedef uint64_t word_t;
 static const unsigned kWordSize = 64;
 static const word_t kMsbMask = 0x8000000000000000;
 static const word_t kOneMask = 0xFFFFFFFFFFFFFFFF;
@@ -35,15 +35,15 @@ enum SuffixType {
 };
 
 void align(char*& ptr) {
-    ptr = (char*)(((uint64_t)ptr + 7) & ~((uint64_t)7));
+    ptr = reinterpret_cast<char*>((reinterpret_cast<uint64_t>(ptr) + 7) & ~(static_cast<uint64_t>(7)));
 }
 
 void sizeAlign(position_t& size) {
-    size = (size + 7) & ~((position_t)7);
+    size = (size + 7) & ~(static_cast<position_t>(7));
 }
 
 void sizeAlign(uint64_t& size) {
-    size = (size + 7) & ~((uint64_t)7);
+    size = (size + 7) & ~(static_cast<uint64_t>(7));
 }
 
 std::string uint64ToString(const uint64_t word) {

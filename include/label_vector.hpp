@@ -9,13 +9,13 @@ namespace surf {
 
 class LabelVector {
 public:
-    LabelVector() : num_bytes_(0), labels_(nullptr) {};
+    LabelVector() : num_bytes_(0), labels_(nullptr) {}
 
     LabelVector(const std::vector<std::vector<label_t> >& labels_per_level,
 		const level_t start_level = 0,
 		level_t end_level = 0/* non-inclusive */) {
 	if (end_level == 0)
-	    end_level = labels_per_level.size();
+        end_level = static_cast<level_t>(labels_per_level.size());
 
 	num_bytes_ = 1;
 	for (level_t level = start_level; level < end_level; level++)

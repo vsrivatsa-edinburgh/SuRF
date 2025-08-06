@@ -13,7 +13,7 @@ namespace surf {
 
 class BitvectorRank : public Bitvector {
 public:
-    BitvectorRank() : basic_block_size_(0), rank_lut_(nullptr) {};
+    BitvectorRank() : basic_block_size_(0), rank_lut_(nullptr) {}
 
     BitvectorRank(const position_t basic_block_size, 
 		  const std::vector<std::vector<word_t> >& bitvector_per_level, 
@@ -35,8 +35,8 @@ public:
         position_t word_per_basic_block = basic_block_size_ / kWordSize;
         position_t block_id = pos / basic_block_size_;
         position_t offset = pos & (basic_block_size_ - 1);
-        return (rank_lut_[block_id] 
-		+ popcountLinear(bits_, block_id * word_per_basic_block, offset + 1));
+		return (rank_lut_[block_id] 
+		+ static_cast<position_t>(popcountLinear(bits_, block_id * word_per_basic_block, offset + 1)));
     }
 
     position_t rankLutSize() const {

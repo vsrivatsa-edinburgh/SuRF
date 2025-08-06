@@ -18,7 +18,7 @@ namespace surf {
 // to indicate that there is no suffix info associated with the key.
 class BitvectorSuffix : public Bitvector {
 public:
-    BitvectorSuffix() : type_(kNone), hash_suffix_len_(0), real_suffix_len_(0) {};
+    BitvectorSuffix() : type_(kNone), hash_suffix_len_(0), real_suffix_len_(0) {}
 
     BitvectorSuffix(const SuffixType type,
                     const level_t hash_suffix_len, const level_t real_suffix_len,
@@ -47,17 +47,17 @@ public:
 	word_t suffix = 0;
 	level_t num_complete_bytes = len / 8;
 	if (num_complete_bytes > 0) {
-	    suffix += (word_t)(label_t)key[level];
+	    suffix += static_cast<word_t>(static_cast<label_t>(key[level]));
 	    for (position_t i = 1; i < num_complete_bytes; i++) {
 		suffix <<= 8;
-		suffix += (word_t)(uint8_t)key[level + i];
+		suffix += static_cast<word_t>(static_cast<uint8_t>(key[level + i]));
 	    }
 	}
 	level_t offset = len % 8;
 	if (offset > 0) {
 	    suffix <<= offset;
 	    word_t remaining_bits = 0;
-	    remaining_bits = (word_t)(uint8_t)key[level + num_complete_bytes];
+		remaining_bits = static_cast<word_t>(static_cast<uint8_t>(key[level + num_complete_bytes]));
 	    remaining_bits >>= (8 - offset);
 	    suffix += remaining_bits;
 	}

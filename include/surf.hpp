@@ -15,7 +15,7 @@ class SuRF {
 public:
     class Iter {
     public:
-	Iter() {};
+	Iter() {}
 	Iter(const SuRF* filter) {
 	    dense_iter_ = LoudsDense::Iter(filter->louds_dense_);
 	    sparse_iter_ = LoudsSparse::Iter(filter->louds_sparse_);
@@ -51,7 +51,7 @@ public:
     };
 
 public:
-    SuRF() : louds_dense_(nullptr), louds_sparse_(nullptr), builder_(nullptr), incremental_mode_(false) {};
+    SuRF() : louds_dense_(nullptr), louds_sparse_(nullptr), builder_(nullptr), incremental_mode_(false) {}
 
     //------------------------------------------------------------------
     // Input keys must be SORTED
@@ -113,7 +113,7 @@ public:
     // This function searches in a conservative way: if inclusive is true
     // and the stored key prefix matches key, iter stays at this key prefix.
     SuRF::Iter moveToKeyGreaterThan(const std::string& key, const bool inclusive) const;
-    SuRF::Iter moveToKeyLessThan(const std::string& key, const bool inclusive) const;
+    SuRF::Iter moveToKeyLessThan(const std::string& key) const;
     SuRF::Iter moveToFirst() const;
     SuRF::Iter moveToLast() const;
     bool lookupRange(const std::string& left_key, const bool left_inclusive, 
@@ -133,7 +133,7 @@ public:
 	char* cur_data = data;
 	louds_dense_->serialize(cur_data);
 	louds_sparse_->serialize(cur_data);
-	assert(cur_data - data == (int64_t)size);
+	assert(cur_data - data == static_cast<int64_t>(size));
 	return data;
     }
 
@@ -265,16 +265,16 @@ SuRF::Iter SuRF::moveToKeyGreaterThan(const std::string& key, const bool inclusi
     return iter;
 }
 
-SuRF::Iter SuRF::moveToKeyLessThan(const std::string& key, const bool inclusive) const {
+SuRF::Iter SuRF::moveToKeyLessThan(const std::string& key) const {
     SuRF::Iter iter = moveToKeyGreaterThan(key, false);
     if (!iter.isValid()) {
-	iter = moveToLast();
-	return iter;
+    iter = moveToLast();
+    return iter;
     }
     if (!iter.getFpFlag()) {
-	iter--;
-	if (lookupKey(key))
-	    iter--;
+    iter--;
+    if (lookupKey(key))
+        iter--;
     }
     return iter;
 }

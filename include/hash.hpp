@@ -19,7 +19,7 @@ inline uint32_t Hash(const char* data, size_t n, uint32_t seed) {
     const uint32_t m = 0xc6a4a793;
     const uint32_t r = 24;
     const char* limit = data + n;
-    uint32_t h = seed ^ (n * m);
+    uint32_t h = seed ^ (static_cast<uint32_t>(n) * m);
 
     // Pick up four bytes at a time
     while (data + 4 <= limit) {
@@ -33,14 +33,19 @@ inline uint32_t Hash(const char* data, size_t n, uint32_t seed) {
     // Pick up remaining bytes
     switch (limit - data) {
     case 3:
-	h += static_cast<unsigned char>(data[2]) << 16;
+        h += static_cast<unsigned char>(data[2]) << 16;
+        break;
     case 2:
-	h += static_cast<unsigned char>(data[1]) << 8;
+        h += static_cast<unsigned char>(data[1]) << 8;
+        break;
     case 1:
-	h += static_cast<unsigned char>(data[0]);
-	h *= m;
-	h ^= (h >> r);
-	break;
+        h += static_cast<unsigned char>(data[0]);
+        h *= m;
+        h ^= (h >> r);
+        break;
+    default:
+        // No remaining bytes
+        break;
     }
     return h;
 }

@@ -11,14 +11,14 @@ namespace surf {
 
 class Bitvector {
 public:
-    Bitvector() : num_bits_(0), bits_(nullptr) {};
+    Bitvector() : num_bits_(0), bits_(nullptr) {}
 
     Bitvector(const std::vector<std::vector<word_t> >& bitvector_per_level, 
 	      const std::vector<position_t>& num_bits_per_level, 
 	      const level_t start_level = 0, 
 	      level_t end_level = 0/* non-inclusive */) {
 	if (end_level == 0)
-	    end_level = bitvector_per_level.size();
+		end_level = static_cast<level_t>(bitvector_per_level.size());
 	num_bits_ = totalNumBits(num_bits_per_level, start_level, end_level);
 	bits_ = new word_t[numWords()];
 	memset(bits_, 0, bitsSize());
@@ -163,7 +163,7 @@ void Bitvector::concatenateBitvectors(const std::vector<std::vector<word_t> >& b
 	    } else {
 		word_id++;
 		bits_[word_id] |= (last_word << (kWordSize - bit_shift));
-		bit_shift = bit_shift + bits_remain - kWordSize;
+		bit_shift = static_cast<position_t>(bit_shift + bits_remain - kWordSize);
 	    }
 	}
     }

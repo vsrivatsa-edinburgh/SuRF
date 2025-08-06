@@ -8,36 +8,17 @@
 
 namespace surf {
 
-#define L8 0x0101010101010101ULL // Every lowest 8th bit set: 00000001...
-#define G2 0xAAAAAAAAAAAAAAAAULL // Every highest 2nd bit: 101010...
-#define G4 0x3333333333333333ULL // 00110011 ... used to group the sum of 4 bits.
-#define G8 0x0F0F0F0F0F0F0F0FULL
-#define H8 0x8080808080808080ULL 
-#define L9 0x0040201008040201ULL
-#define H9 (L9 << 8)
-#define L16 0x0001000100010001ULL
-#define H16 0x8000800080008000ULL
+#define L8 0x0101010101010101UL // Every lowest 8th bit set: 00000001...
+#define G2 0xAAAAAAAAAAAAAAAAUL // Every highest 2nd bit: 101010...
+#define G4 0x3333333333333333UL // 00110011 ... used to group the sum of 4 bits.
+#define G8 0x0F0F0F0F0F0F0F0FUL
 
-#define ONES_STEP_4 ( 0x1111111111111111ULL )
-#define ONES_STEP_8 ( 0x0101010101010101ULL )
-#define ONES_STEP_9 ( 1ULL << 0 | 1ULL << 9 | 1ULL << 18 | 1ULL << 27 | 1ULL << 36 | 1ULL << 45 | 1ULL << 54 )
-#define ONES_STEP_16 ( 1ULL << 0 | 1ULL << 16 | 1ULL << 32 | 1ULL << 48 )
-#define MSBS_STEP_4 ( 0x8ULL * ONES_STEP_4 )
-#define MSBS_STEP_8 ( 0x80ULL * ONES_STEP_8 )
-#define MSBS_STEP_9 ( 0x100ULL * ONES_STEP_9 )
-#define MSBS_STEP_16 ( 0x8000ULL * ONES_STEP_16 )
-#define INCR_STEP_8 ( 0x80ULL << 56 | 0x40ULL << 48 | 0x20ULL << 40 | 0x10ULL << 32 | 0x8ULL << 24 | 0x4ULL << 16 | 0x2ULL << 8 | 0x1 )
-
-#define ONES_STEP_32 ( 0x0000000100000001ULL )
-#define MSBS_STEP_32 ( 0x8000000080000000ULL )
+#define ONES_STEP_4 ( 0x1111111111111111UL )
+#define ONES_STEP_8 ( 0x0101010101010101UL )
+#define MSBS_STEP_8 ( 0x80UL * ONES_STEP_8 )
+#define INCR_STEP_8 ( 0x80UL << 56 | 0x40UL << 48 | 0x20UL << 40 | 0x10UL << 32 | 0x8UL << 24 | 0x4UL << 16 | 0x2UL << 8 | 0x1 )
 	
-#define COMPARE_STEP_8(x,y) ( ( ( ( ( (x) | MSBS_STEP_8 ) - ( (y) & ~MSBS_STEP_8 ) ) ^ (x) ^ ~(y) ) & MSBS_STEP_8 ) >> 7 )
 #define LEQ_STEP_8(x,y) ( ( ( ( ( (y) | MSBS_STEP_8 ) - ( (x) & ~MSBS_STEP_8 ) ) ^ (x) ^ (y) ) & MSBS_STEP_8 ) >> 7 )
-
-#define UCOMPARE_STEP_9(x,y) ( ( ( ( ( ( (x) | MSBS_STEP_9 ) - ( (y) & ~MSBS_STEP_9 ) ) | ( x ^ y ) ) ^ ( x | ~y ) ) & MSBS_STEP_9 ) >> 8 )
-#define UCOMPARE_STEP_16(x,y) ( ( ( ( ( ( (x) | MSBS_STEP_16 ) - ( (y) & ~MSBS_STEP_16 ) ) | ( x ^ y ) ) ^ ( x | ~y ) ) & MSBS_STEP_16 ) >> 15 )
-#define ULEQ_STEP_9(x,y) ( ( ( ( ( ( (y) | MSBS_STEP_9 ) - ( (x) & ~MSBS_STEP_9 ) ) | ( x ^ y ) ) ^ ( x & ~y ) ) & MSBS_STEP_9 ) >> 8 )
-#define ULEQ_STEP_16(x,y) ( ( ( ( ( ( (y) | MSBS_STEP_16 ) - ( (x) & ~MSBS_STEP_16 ) ) | ( x ^ y ) ) ^ ( x & ~y ) ) & MSBS_STEP_16 ) >> 15 )
 #define ZCOMPARE_STEP_8(x) ( ( ( x | ( ( x | MSBS_STEP_8 ) - ONES_STEP_8 ) ) & MSBS_STEP_8 ) >> 7 )
 
 // Population count of a 64 bit integer in SWAR (SIMD within a register) style
@@ -54,17 +35,17 @@ inline int suxpopcount(uint64_t x) {
     x = (x + (x >> 4)) & G8;
     // Using a multiply to collect the 8 groups of 8 together.
     x = x * L8 >> 56;
-    return x;
+    return static_cast<int>(x);
 }
 
 // Default to using the GCC builtin popcount.  On architectures
 // with -march popcnt, this compiles to a single popcnt instruction.
 #ifndef popcount
-#define popcount __builtin_popcountll
+#define popcount __builtin_popcountl
 //#define popcount suxpopcount
 #endif
 
-#define popcountsize 64ULL
+#define popcountsize 64UL
 #define popcountmask (popcountsize - 1)
 
 inline uint64_t popcountLinear(uint64_t *bits, uint64_t x, uint64_t nbits) {
@@ -91,7 +72,7 @@ inline int select64_naive(uint64_t x, int k) {
     int count = -1;
     for (int i = 63; i >= 0; i--) {
         count++;
-        if (x & (1ULL << i)) {
+        if (x & (1UL << i)) {
             k--;
             if (k == 0) {
                 return count;
@@ -108,7 +89,7 @@ inline int select64_popcount_search(uint64_t x, int k) {
     for (int testbits = 32; testbits > 0; testbits >>= 1) {
         int lcount = popcount(x >> testbits);
         if (k > lcount) {
-            x &= ((1ULL << testbits)-1);
+            x &= ((1UL << testbits)-1);
             loc += testbits;
             k -= lcount;
         } else {
@@ -144,8 +125,8 @@ inline int select64_broadword(uint64_t x, int k) {
     return place + ( LEQ_STEP_8( bit_sums, byte_rank_step_8 ) * ONES_STEP_8 >> 56 );   
 }
 
-inline int select64(uint64_t x, int k) {
-    return select64_popcount_search(x, k);
+inline uint64_t select64(uint64_t x, int k) {
+    return static_cast<uint64_t>(select64_popcount_search(x, k));
 }
 
 // x is the starting offset of the 512 bits;
@@ -165,14 +146,14 @@ inline int select512(uint64_t *bits, int x, int k) {
         return -1;
     }
     // We're now certain that the bit we want is stored in bv[x+i]
-    return i*64 + select64(bits[x+i], k);
+    return static_cast<int>(i*64 + select64(bits[x+i], k));
 }
 
 // brute-force linear select
 // x is the starting offset of the bits in bv;
 // k is the thing we're selecting for (starting from bv[x]).
 // bvlen is the total length of bv
-inline uint64_t selectLinear(uint64_t* bits, uint64_t length, uint64_t x, uint64_t k) {
+inline int selectLinear(uint64_t* bits, uint64_t length, uint64_t x, uint64_t k) {
     if (k > (length - x) * 64)
         return -1;
     uint64_t i = 0;
@@ -186,7 +167,7 @@ inline uint64_t selectLinear(uint64_t* bits, uint64_t length, uint64_t x, uint64
         return -1;
     }
     // We're now certain that the bit we want is stored in bits[x+i]
-    return i*64 + select64(bits[x+i], k);
+    return static_cast<int>(i*64 + select64(bits[x+i], static_cast<int>(k)));
 }
 
 } // namespace surf

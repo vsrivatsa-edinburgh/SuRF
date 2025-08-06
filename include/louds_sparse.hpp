@@ -16,7 +16,7 @@ class LoudsSparse {
 public:
     class Iter {
     public:
-	Iter() : is_valid_(false) {};
+	Iter() : is_valid_(false) {}
 	Iter(LoudsSparse* trie) : is_valid_(false), trie_(trie), start_node_num_(0), 
 				  key_len_(0), is_at_terminator_(false) {
 	    start_level_ = trie_->getStartLevel();
@@ -27,14 +27,14 @@ public:
 	}
 
 	void clear();
-	bool isValid() const { return is_valid_; };
+	bool isValid() const { return is_valid_; }
 	int compare(const std::string& key) const;
 	std::string getKey() const;
         int getSuffix(word_t* suffix) const;
 	std::string getKeyWithSuffix(unsigned* bitlen) const;
 
-	position_t getStartNodeNum() const { return start_node_num_; };
-	void setStartNodeNum(position_t node_num) { start_node_num_ = node_num; };
+	position_t getStartNodeNum() const { return start_node_num_; }
+	void setStartNodeNum(position_t node_num) { start_node_num_ = node_num; }
 
 	void setToFirstLabelInRoot();
 	void setToLastLabelInRoot();
@@ -63,7 +63,7 @@ public:
     };
 
 public:
-    LoudsSparse() {};
+    LoudsSparse() {}
     LoudsSparse(const SuRFBuilder* builder);
 
     ~LoudsSparse() {}
@@ -79,8 +79,8 @@ public:
 			 const position_t in_node_num_left,
 			 const position_t in_node_num_right) const;
 
-    level_t getHeight() const { return height_; };
-    level_t getStartLevel() const { return start_level_; };
+    level_t getHeight() const { return height_; }
+    level_t getStartLevel() const { return start_level_; }
     uint64_t serializedSize() const;
     uint64_t getMemoryUsage() const;
 
@@ -146,7 +146,7 @@ private:
 				 const label_t label, LoudsSparse::Iter& iter) const;
     // return value indicates potential false positive
     bool compareSuffixGreaterThan(const position_t pos, const std::string& key, 
-				  const level_t level, const bool inclusive, 
+				  const level_t level, 
 				  LoudsSparse::Iter& iter) const;
 
     position_t appendToPosList(std::vector<position_t>& pos_list,
@@ -177,7 +177,7 @@ private:
 
 
 LoudsSparse::LoudsSparse(const SuRFBuilder* builder) {
-    height_ = builder->getLabels().size();
+	height_ = static_cast<level_t>(builder->getLabels().size());
     start_level_ = builder->getSparseStartLevel();
 
     node_count_dense_ = 0;
@@ -193,7 +193,7 @@ LoudsSparse::LoudsSparse(const SuRFBuilder* builder) {
 
     std::vector<position_t> num_items_per_level;
     for (level_t level = 0; level < height_; level++)
-	num_items_per_level.push_back(builder->getLabels()[level].size());
+	num_items_per_level.push_back(static_cast<position_t>(builder->getLabels()[level].size()));
 
     level_cuts_ = new position_t[height_];
     for (level_t level = 0; level < start_level_; level++) {
@@ -232,7 +232,7 @@ bool LoudsSparse::lookupKey(const std::string& key, const position_t in_node_num
     level_t level = 0;
     for (level = start_level_; level < key.length(); level++) {
 	//child_indicator_bits_->prefetch(pos);
-	if (!labels_->search((label_t)key[level], pos, nodeSize(pos)))
+	if (!labels_->search(static_cast<label_t>(key[level]), pos, nodeSize(pos)))
 	    return false;
 
 	// if trie branch terminates
@@ -257,7 +257,7 @@ bool LoudsSparse::moveToKeyGreaterThan(const std::string& key,
     for (level = start_level_; level < key.length(); level++) {
 	position_t node_size = nodeSize(pos);
 	// if no exact match
-	if (!labels_->search((label_t)key[level], pos, node_size)) {
+	if (!labels_->search(static_cast<label_t>(key[level]), pos, node_size)) {
 	    moveToLeftInNextSubtrie(pos, node_size, key[level], iter);
 	    return false;
 	}
@@ -266,7 +266,7 @@ bool LoudsSparse::moveToKeyGreaterThan(const std::string& key,
 
 	// if trie branch terminates
 	if (!child_indicator_bits_->readBit(pos))
-	    return compareSuffixGreaterThan(pos, key, level+1, inclusive, iter);
+	    return compareSuffixGreaterThan(pos, key, level+1, iter);
 
 	// move to child
 	node_num = getChildNodeNum(pos);
@@ -318,38 +318,38 @@ void LoudsSparse::extendPosList(std::vector<position_t>& left_pos_list,
 				const position_t right_in_node_num) const {
     position_t left_node_num = 0, right_node_num = 0, left_pos = 0, right_pos = 0;
     bool left_done = false, right_done = false;
-    level_t start_depth = left_pos_list.size();
-    if (start_depth > right_pos_list.size())
-	start_depth = right_pos_list.size();
+	level_t start_depth = static_cast<level_t>(left_pos_list.size());
+	if (start_depth > static_cast<level_t>(right_pos_list.size()))
+	start_depth = static_cast<level_t>(right_pos_list.size());
     if (start_depth == 0) {
 	if (left_pos_list.size() == 0)
-	    left_pos = appendToPosList(left_pos_list, left_in_node_num,
-				       0, true, left_done);
+		left_pos = appendToPosList(left_pos_list, left_in_node_num,
+					   0, true, left_done);
 	if (right_pos_list.size() == 0)
-	    right_pos = appendToPosList(right_pos_list, right_in_node_num,
+		right_pos = appendToPosList(right_pos_list, right_in_node_num,
 					0, false, right_done);
 	start_depth++;
-    }
-
-    left_pos = left_pos_list[left_pos_list.size() - 1];
-    right_pos = right_pos_list[right_pos_list.size() - 1];
-    for (level_t i = start_depth; i < (height_ - start_level_); i++) {
-	if (left_pos == right_pos) break;
-	if (!left_done && left_pos_list.size() <= i) {
-	    left_node_num = getChildNodeNum(left_pos);
-	    if (!child_indicator_bits_->readBit(left_pos))
-		left_node_num++;
-	    left_pos = appendToPosList(left_pos_list, left_node_num,
-				       i, true, left_done);
 	}
-	if (!right_done && right_pos_list.size() <= i) {
-	    right_node_num = getChildNodeNum(right_pos);
-	    if (!child_indicator_bits_->readBit(right_pos))
+
+	left_pos = left_pos_list[static_cast<level_t>(left_pos_list.size()) - 1];
+	right_pos = right_pos_list[static_cast<level_t>(right_pos_list.size()) - 1];
+	for (level_t i = start_depth; i < (height_ - start_level_); i++) {
+	if (left_pos == right_pos) break;
+	if (!left_done && static_cast<level_t>(left_pos_list.size()) <= i) {
+		left_node_num = getChildNodeNum(left_pos);
+		if (!child_indicator_bits_->readBit(left_pos))
+		left_node_num++;
+		left_pos = appendToPosList(left_pos_list, left_node_num,
+					   i, true, left_done);
+	}
+	if (!right_done && static_cast<level_t>(right_pos_list.size()) <= i) {
+		right_node_num = getChildNodeNum(right_pos);
+		if (!child_indicator_bits_->readBit(right_pos))
 		right_node_num++;
-	    right_pos = appendToPosList(right_pos_list, right_node_num,
+		right_pos = appendToPosList(right_pos_list, right_node_num,
 					i, false, right_done);
 	}
-    }
+	}
 }
 
 uint64_t LoudsSparse::approxCount(const LoudsSparse::Iter* iter_left,
@@ -358,43 +358,43 @@ uint64_t LoudsSparse::approxCount(const LoudsSparse::Iter* iter_left,
 				  const position_t in_node_num_right) const {
     if (in_node_num_left == kMaxPos) return 0;
     std::vector<position_t> left_pos_list, right_pos_list;
-    for (level_t i = 0; i < iter_left->key_len_; i++)
+	for (level_t i = 0; i < iter_left->key_len_; i++)
 	left_pos_list.push_back(iter_left->pos_in_trie_[i]);
-    level_t ori_left_len = left_pos_list.size();
-    if (in_node_num_right == kMaxPos) {
+	level_t ori_left_len = static_cast<level_t>(left_pos_list.size());
+	if (in_node_num_right == kMaxPos) {
 	for (level_t i = 0; i < (height_ - start_level_); i++)
-	    right_pos_list.push_back(kMaxPos);
-    } else {
+		right_pos_list.push_back(kMaxPos);
+	} else {
 	for (level_t i = 0; i < iter_right->key_len_; i++)
-	    right_pos_list.push_back(iter_right->pos_in_trie_[i]);
-    }
-    extendPosList(left_pos_list, right_pos_list, in_node_num_left, in_node_num_right);
+		right_pos_list.push_back(iter_right->pos_in_trie_[i]);
+	}
+	extendPosList(left_pos_list, right_pos_list, in_node_num_left, in_node_num_right);
 
-    uint64_t count = 0;
-    level_t search_depth = left_pos_list.size();
-    if (search_depth > right_pos_list.size())
-	search_depth = right_pos_list.size();
-    for (level_t i = 0; i < search_depth; i++) {
+	uint64_t count = 0;
+	level_t search_depth = static_cast<level_t>(left_pos_list.size());
+	if (search_depth > static_cast<level_t>(right_pos_list.size()))
+	search_depth = static_cast<level_t>(right_pos_list.size());
+	for (level_t i = 0; i < search_depth; i++) {
 	position_t left_pos = left_pos_list[i];
 	if (left_pos == kMaxPos) break;
 	position_t right_pos = right_pos_list[i];
 	if (right_pos == kMaxPos)
-	    right_pos = level_cuts_[start_level_ + i] + 1;
+		right_pos = level_cuts_[start_level_ + i] + 1;
 	//assert(left_pos <= right_pos);
 	if (left_pos < right_pos) {
-	    position_t rank_left = child_indicator_bits_->rank(left_pos);
-	    position_t rank_right = child_indicator_bits_->rank(right_pos);
-	    position_t num_leafs = (right_pos - left_pos) - (rank_right - rank_left);
-	    if (child_indicator_bits_->readBit(right_pos))
+		position_t rank_left = child_indicator_bits_->rank(left_pos);
+		position_t rank_right = child_indicator_bits_->rank(right_pos);
+		position_t num_leafs = (right_pos - left_pos) - (rank_right - rank_left);
+		if (child_indicator_bits_->readBit(right_pos))
 		num_leafs++;
-	    if (child_indicator_bits_->readBit(left_pos))
+		if (child_indicator_bits_->readBit(left_pos))
 		num_leafs--;
-	    if (i == ori_left_len - 1)
+		if (i == ori_left_len - 1)
 		num_leafs--;
-	    count += num_leafs;
+		count += num_leafs;
 	}
-    }
-    return count;
+	}
+	return count;
 }
 
 uint64_t LoudsSparse::serializedSize() const {
@@ -460,16 +460,15 @@ void LoudsSparse::moveToLeftInNextSubtrie(position_t pos, const position_t node_
 }
 
 bool LoudsSparse::compareSuffixGreaterThan(const position_t pos, const std::string& key, 
-					   const level_t level, const bool inclusive, 
-					   LoudsSparse::Iter& iter) const {
-    position_t suffix_pos = getSuffixPos(pos);
-    int compare = suffixes_->compare(suffix_pos, key, level);
-    if ((compare != kCouldBePositive) && (compare < 0)) {
+					   const level_t level, LoudsSparse::Iter& iter) const {
+	position_t suffix_pos = getSuffixPos(pos);
+	int compare = suffixes_->compare(suffix_pos, key, level);
+	if ((compare != kCouldBePositive) && (compare < 0)) {
 	iter++;
 	return false;
-    }
-    iter.is_valid_ = true;
-    return true;
+	}
+	iter.is_valid_ = true;
+	return true;
 }
 
 //============================================================================
@@ -499,7 +498,7 @@ std::string LoudsSparse::Iter::getKey() const {
     level_t len = key_len_;
     if (is_at_terminator_)
 	len--;
-    return std::string((const char*)key_.data(), (size_t)len);
+    return std::string(reinterpret_cast<const char*>(key_.data()), static_cast<size_t>(len));
 }
 
 int LoudsSparse::Iter::getSuffix(word_t* suffix) const {

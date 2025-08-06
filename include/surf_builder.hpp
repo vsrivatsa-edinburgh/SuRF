@@ -14,12 +14,12 @@ namespace surf {
 
 class SuRFBuilder {
 public: 
-    SuRFBuilder() : sparse_start_level_(0), suffix_type_(kNone), has_keys_(false) {};
+    SuRFBuilder() : sparse_start_level_(0), suffix_type_(kNone), has_keys_(false) {}
     explicit SuRFBuilder(bool include_dense, uint32_t sparse_dense_ratio,
 			 SuffixType suffix_type, level_t hash_suffix_len, level_t real_suffix_len)
 	: include_dense_(include_dense), sparse_dense_ratio_(sparse_dense_ratio),
 	  sparse_start_level_(0), suffix_type_(suffix_type),
-          hash_suffix_len_(hash_suffix_len), real_suffix_len_(real_suffix_len), has_keys_(false) {};
+          hash_suffix_len_(hash_suffix_len), real_suffix_len_(real_suffix_len), has_keys_(false) {}
 
     // Copy constructor
     SuRFBuilder(const SuRFBuilder& other)
@@ -40,9 +40,9 @@ public:
           node_counts_(other.node_counts_),
           is_last_item_terminator_(other.is_last_item_terminator_),
           last_inserted_key_(other.last_inserted_key_),
-          has_keys_(other.has_keys_) {};
+          has_keys_(other.has_keys_) {}
 
-    ~SuRFBuilder() {};
+    ~SuRFBuilder() {}
 
     // Fills in the LOUDS-dense and sparse vectors (members of this class)
     // through a single scan of the sorted key list.
@@ -81,7 +81,7 @@ public:
     }
 
     level_t getTreeHeight() const {
-	return labels_.size();
+    return static_cast<level_t>(labels_.size());
     }
 
     // const accessors
@@ -239,7 +239,7 @@ void SuRFBuilder::buildSparse(const std::vector<std::string>& keys) {
 
 level_t SuRFBuilder::skipCommonPrefix(const std::string& key) {
     level_t level = 0;
-    while (level < key.length() && isCharCommonPrefix((label_t)key[level], level)) {
+    while (level < key.length() && isCharCommonPrefix(static_cast<label_t>(key[level]), level)) {
 	setBit(child_indicator_bits_[level], getNumItems(level) - 1);
 	level++;
     }
@@ -384,7 +384,7 @@ inline uint64_t SuRFBuilder::computeDenseMem(const level_t downto_level) const {
 inline uint64_t SuRFBuilder::computeSparseMem(const level_t start_level) const {
     uint64_t mem = 0;
     for (level_t level = start_level; level < getTreeHeight(); level++) {
-	position_t num_items = labels_[level].size();
+    position_t num_items = static_cast<position_t>(labels_[level].size());
 	mem += (num_items + 2 * num_items / 8 + 1);
 	mem += (suffix_counts_[level] * getSuffixLen() / 8);
     }
@@ -420,10 +420,10 @@ void SuRFBuilder::initDenseVectors(const level_t level) {
     prefixkey_indicator_bits_.push_back(std::vector<word_t>());
 
     for (position_t nc = 0; nc < node_counts_[level]; nc++) {
-	for (int i = 0; i < (int)kFanout; i += kWordSize) {
-	    bitmap_labels_[level].push_back(0);
-	    bitmap_child_indicator_bits_[level].push_back(0);
-	}
+    for (int i = 0; i < static_cast<int>(kFanout); i += kWordSize) {
+        bitmap_labels_[level].push_back(0);
+        bitmap_child_indicator_bits_[level].push_back(0);
+    }
 	if (nc % kWordSize == 0)
 	    prefixkey_indicator_bits_[level].push_back(0);
     }
@@ -452,7 +452,7 @@ void SuRFBuilder::addLevel() {
 }
 
 position_t SuRFBuilder::getNumItems(const level_t level) const {
-    return labels_[level].size();
+    return static_cast<position_t>(labels_[level].size());
 }
 
 bool SuRFBuilder::isStartOfNode(const level_t level, const position_t pos) const {

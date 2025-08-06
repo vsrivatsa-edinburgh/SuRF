@@ -14,7 +14,7 @@ namespace surf {
 
 class BitvectorSelect : public Bitvector {
 public:
-    BitvectorSelect() : sample_interval_(0), num_ones_(0), select_lut_(nullptr) {};
+    BitvectorSelect() : sample_interval_(0), num_ones_(0), select_lut_(nullptr) {}
 
     BitvectorSelect(const position_t sample_interval, 
 		    const std::vector<std::vector<word_t> >& bitvector_per_level, 
@@ -151,7 +151,7 @@ private:
 	}
 
 	num_ones_ = cumu_ones_upto_word;
-	position_t num_samples = select_lut_vector.size();
+	position_t num_samples = static_cast<position_t>(select_lut_vector.size());
 	select_lut_ = new position_t[num_samples];
 	for (position_t i = 0; i < num_samples; i++)
 	    select_lut_[i] = select_lut_vector[i];

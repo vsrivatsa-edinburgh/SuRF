@@ -14,7 +14,7 @@ class LoudsDense {
 public:
     class Iter {
     public:
-	Iter() : is_valid_(false) {};
+	Iter() : is_valid_(false) {}
 	Iter(LoudsDense* trie) : is_valid_(false), is_search_complete_(false),
 				 is_move_left_complete_(false),
 				 is_move_right_complete_(false),
@@ -28,10 +28,10 @@ public:
 	}
 
 	void clear();
-	bool isValid() const { return is_valid_; };
-	bool isSearchComplete() const { return is_search_complete_; };
-	bool isMoveLeftComplete() const { return is_move_left_complete_; };
-	bool isMoveRightComplete() const { return is_move_right_complete_; };
+	bool isValid() const { return is_valid_; }
+	bool isSearchComplete() const { return is_search_complete_; }
+	bool isMoveLeftComplete() const { return is_move_left_complete_; }
+	bool isMoveRightComplete() const { return is_move_right_complete_; }
 	bool isComplete() const {
 	    return (is_search_complete_ &&
 		    (is_move_left_complete_ && is_move_right_complete_));
@@ -41,7 +41,7 @@ public:
 	std::string getKey() const;
 	int getSuffix(word_t* suffix) const;
 	std::string getKeyWithSuffix(unsigned* bitlen) const;
-	position_t getSendOutNodeNum() const { return send_out_node_num_; };
+	position_t getSendOutNodeNum() const { return send_out_node_num_; }
 
 	void setToFirstLabelInRoot();
 	void setToLastLabelInRoot();
@@ -53,7 +53,7 @@ public:
     private:
 	inline void append(position_t pos);
 	inline void set(level_t level, position_t pos);
-	inline void setSendOutNodeNum(position_t node_num) { send_out_node_num_ = node_num; };
+	inline void setSendOutNodeNum(position_t node_num) { send_out_node_num_ = node_num; }
 	inline void setFlags(const bool is_valid, const bool is_search_complete, 
 			     const bool is_move_left_complete,
 			     const bool is_move_right_complete);
@@ -80,7 +80,7 @@ public:
     };
 
 public:
-    LoudsDense() {};
+    LoudsDense() {}
     LoudsDense(const SuRFBuilder* builder);
 
     ~LoudsDense() {}
@@ -96,7 +96,7 @@ public:
 			 position_t& out_node_num_left,
 			 position_t& out_node_num_right) const;
 
-    uint64_t getHeight() const { return height_; };
+    uint64_t getHeight() const { return height_; }
     uint64_t serializedSize() const;
     uint64_t getMemoryUsage() const;
 
@@ -143,8 +143,8 @@ private:
     position_t getNextPos(const position_t pos) const;
     position_t getPrevPos(const position_t pos, bool* is_out_of_bound) const;
 
-    bool compareSuffixGreaterThan(const position_t pos, const std::string& key, 
-				  const level_t level, const bool inclusive, 
+	bool compareSuffixGreaterThan(const position_t pos, const std::string& key, 
+				  const level_t level, 
 				  LoudsDense::Iter& iter) const;
     void extendPosList(std::vector<position_t>& pos_list,
 		       position_t& out_node_num) const;
@@ -167,7 +167,7 @@ LoudsDense::LoudsDense(const SuRFBuilder* builder) {
     height_ = builder->getSparseStartLevel();
     std::vector<position_t> num_bits_per_level;
     for (level_t level = 0; level < height_; level++)
-	num_bits_per_level.push_back(builder->getBitmapLabels()[level].size() * kWordSize);
+	num_bits_per_level.push_back(static_cast<position_t>(builder->getBitmapLabels()[level].size()) * kWordSize);
 
     level_cuts_ = new position_t[height_];
     position_t bit_count = 0;
@@ -212,7 +212,7 @@ bool LoudsDense::lookupKey(const std::string& key, position_t& out_node_num) con
 	    else
 		return false;
 	}
-	pos += (label_t)key[level];
+	pos += static_cast<label_t>(key[level]);
 
 	//child_indicator_bitmaps_->prefetch(pos);
 
@@ -230,10 +230,11 @@ bool LoudsDense::lookupKey(const std::string& key, position_t& out_node_num) con
 }
 
 bool LoudsDense::moveToKeyGreaterThan(const std::string& key, 
-				      const bool inclusive, LoudsDense::Iter& iter) const {
-    position_t node_num = 0;
-    position_t pos = 0;
-    for (level_t level = 0; level < height_; level++) {
+					  const bool inclusive, LoudsDense::Iter& iter) const {
+	(void)inclusive;
+	position_t node_num = 0;
+	position_t pos = 0;
+	for (level_t level = 0; level < height_; level++) {
 	// if is_at_prefix_key_, pos is at the next valid position in the child node
 	pos = node_num * kNodeFanout;
 	if (level >= key.length()) { // if run out of searchKey bytes
@@ -247,7 +248,7 @@ bool LoudsDense::moveToKeyGreaterThan(const std::string& key,
 	    return true;
 	}
 
-	pos += (label_t)key[level];
+	pos += static_cast<label_t>(key[level]);
 	iter.append(pos);
 
 	// if no exact match
@@ -257,7 +258,7 @@ bool LoudsDense::moveToKeyGreaterThan(const std::string& key,
 	}
 	//if trie branch terminates
 	if (!child_indicator_bitmaps_->readBit(pos))
-	    return compareSuffixGreaterThan(pos, key, level+1, inclusive, iter);
+		return compareSuffixGreaterThan(pos, key, level+1, iter);
 	node_num = getChildNodeNum(pos);
     }
 
@@ -272,7 +273,7 @@ void LoudsDense::extendPosList(std::vector<position_t>& pos_list,
 			       position_t& out_node_num) const {
     position_t node_num = 0;
     position_t pos = pos_list[pos_list.size() - 1];
-    for (level_t i = pos_list.size(); i < height_; i++) {
+	for (level_t i = static_cast<level_t>(pos_list.size()); i < height_; i++) {
 	node_num = getChildNodeNum(pos);
 	if (!child_indicator_bitmaps_->readBit(pos))
 	    node_num++;
@@ -285,8 +286,8 @@ void LoudsDense::extendPosList(std::vector<position_t>& pos_list,
 	pos_list.push_back(pos);
     }
     if (pos == kMaxPos) {
-	for (level_t i = pos_list.size(); i < height_; i++)
-	    pos_list.push_back(pos);
+	for (level_t i = static_cast<level_t>(pos_list.size()); i < height_; i++)
+		pos_list.push_back(pos);
 	out_node_num = pos;
     } else {
 	out_node_num = getChildNodeNum(pos);
@@ -300,14 +301,16 @@ uint64_t LoudsDense::approxCount(const LoudsDense::Iter* iter_left,
 				 position_t& out_node_num_left,
 				 position_t& out_node_num_right) const {
     std::vector<position_t> left_pos_list, right_pos_list;
-    for (level_t i = 0; i < iter_left->key_len_; i++)
-	left_pos_list.push_back(iter_left->pos_in_trie_[i]);
-    level_t ori_left_len = left_pos_list.size();
-    extendPosList(left_pos_list, out_node_num_left);
-    
-    for (level_t i = 0; i < iter_right->key_len_; i++)
-	right_pos_list.push_back(iter_right->pos_in_trie_[i]);
-    level_t ori_right_len = right_pos_list.size();
+	for (level_t i = 0; i < iter_left->key_len_; i++){
+		left_pos_list.push_back(iter_left->pos_in_trie_[i]);
+	}
+	level_t ori_left_len = static_cast<level_t>(left_pos_list.size());
+	extendPosList(left_pos_list, out_node_num_left);
+
+    for (level_t i = 0; i < iter_right->key_len_; i++){
+		right_pos_list.push_back(iter_right->pos_in_trie_[i]);
+	}
+	level_t ori_right_len = static_cast<level_t>(right_pos_list.size());
     extendPosList(right_pos_list, out_node_num_right);
 
     uint64_t count = 0;
@@ -412,17 +415,17 @@ position_t LoudsDense::getPrevPos(const position_t pos, bool* is_out_of_bound) c
 }
 
 bool LoudsDense::compareSuffixGreaterThan(const position_t pos, const std::string& key, 
-					  const level_t level, const bool inclusive, 
+					  const level_t level, 
 					  LoudsDense::Iter& iter) const {
-    position_t suffix_pos = getSuffixPos(pos, false);
-    int compare = suffixes_->compare(suffix_pos, key, level);
-    if ((compare != kCouldBePositive) && (compare < 0)) {
+	position_t suffix_pos = getSuffixPos(pos, false);
+	int compare = suffixes_->compare(suffix_pos, key, level);
+	if ((compare != kCouldBePositive) && (compare < 0)) {
 	iter++;
 	return false;
-    }
-    // valid, search complete, moveLeft complete, moveRight complete
-    iter.setFlags(true, true, true, true);
-    return true;
+	}
+	// valid, search complete, moveLeft complete, moveRight complete
+	iter.setFlags(true, true, true, true);
+	return true;
 }
 
 //============================================================================
@@ -441,19 +444,21 @@ int LoudsDense::Iter::compare(const std::string& key) const {
     int compare = iter_key.compare(key_dense);
     if (compare != 0) return compare;
     if (isComplete()) {
-	position_t suffix_pos = trie_->getSuffixPos(pos_in_trie_[key_len_ - 1], is_at_prefix_key_);
-	return trie_->suffixes_->compare(suffix_pos, key, key_len_);
+		position_t suffix_pos = trie_->getSuffixPos(pos_in_trie_[key_len_ - 1], is_at_prefix_key_);
+		return trie_->suffixes_->compare(suffix_pos, key, key_len_);
     }
     return compare;
 }
 
 std::string LoudsDense::Iter::getKey() const {
-    if (!is_valid_)
-	return std::string();
+    if (!is_valid_){
+		return std::string();
+	}
     level_t len = key_len_;
-    if (is_at_prefix_key_)
-	len--;
-    return std::string((const char*)key_.data(), (size_t)len);
+    if (is_at_prefix_key_){
+		len--;
+	}
+	return std::string(reinterpret_cast<const char*>(key_.data()), static_cast<size_t>(len));
 }
 
 int LoudsDense::Iter::getSuffix(word_t* suffix) const {
@@ -492,14 +497,14 @@ std::string LoudsDense::Iter::getKeyWithSuffix(unsigned* bitlen) const {
 
 void LoudsDense::Iter::append(position_t pos) {
     assert(key_len_ < key_.size());
-    key_[key_len_] = (label_t)(pos % kNodeFanout);
+	key_[key_len_] = static_cast<label_t>(pos % kNodeFanout);
     pos_in_trie_[key_len_] = pos;
     key_len_++;
 }
 
 void LoudsDense::Iter::set(level_t level, position_t pos) {
     assert(level < key_.size());
-    key_[level] = (label_t)(pos % kNodeFanout);
+	key_[level] = static_cast<label_t>(pos % kNodeFanout);
     pos_in_trie_[level] = pos;
 }
 
@@ -516,10 +521,10 @@ void LoudsDense::Iter::setFlags(const bool is_valid,
 void LoudsDense::Iter::setToFirstLabelInRoot() {
     if (trie_->label_bitmaps_->readBit(0)) {
 	pos_in_trie_[0] = 0;
-	key_[0] = (label_t)0;
+	key_[0] = static_cast<label_t>(0);
     } else {
 	pos_in_trie_[0] = trie_->getNextPos(0);
-	key_[0] = (label_t)pos_in_trie_[0];
+	key_[0] = static_cast<label_t>(pos_in_trie_[0]);
     }
     key_len_++;
 }
@@ -527,7 +532,7 @@ void LoudsDense::Iter::setToFirstLabelInRoot() {
 void LoudsDense::Iter::setToLastLabelInRoot() {
     bool is_out_of_bound;
     pos_in_trie_[0] = trie_->getPrevPos(kNodeFanout, &is_out_of_bound);
-    key_[0] = (label_t)pos_in_trie_[0];
+	key_[0] = static_cast<label_t>(pos_in_trie_[0]);
     key_len_++;
 }
 
