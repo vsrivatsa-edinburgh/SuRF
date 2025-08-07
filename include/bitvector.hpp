@@ -67,14 +67,14 @@ protected:
     word_t* bits_;
 };
 
-bool Bitvector::readBit (const position_t pos) const {
+inline bool Bitvector::readBit (const position_t pos) const {
     assert(pos <= num_bits_);
     position_t word_id = pos / kWordSize;
     position_t offset = pos & (kWordSize - 1);
     return bits_[word_id] & (kMsbMask >> offset);
 }
 
-position_t Bitvector::distanceToNextSetBit (const position_t pos) const {
+inline position_t Bitvector::distanceToNextSetBit (const position_t pos) const {
     assert(pos < num_bits_);
     position_t distance = 1;
 
@@ -101,7 +101,7 @@ position_t Bitvector::distanceToNextSetBit (const position_t pos) const {
     return distance;
 }
 
-position_t Bitvector::distanceToPrevSetBit (const position_t pos) const {
+inline position_t Bitvector::distanceToPrevSetBit (const position_t pos) const {
     assert(pos <= num_bits_);
     if (pos == 0) return 0;
     position_t distance = 1;
@@ -129,7 +129,7 @@ position_t Bitvector::distanceToPrevSetBit (const position_t pos) const {
     return distance;
 }
 
-position_t Bitvector::totalNumBits(const std::vector<position_t>& num_bits_per_level, 
+inline position_t Bitvector::totalNumBits(const std::vector<position_t>& num_bits_per_level, 
 			     const level_t start_level, 
 			     const level_t end_level/* non-inclusive */) {
     position_t num_bits = 0;
@@ -138,7 +138,7 @@ position_t Bitvector::totalNumBits(const std::vector<position_t>& num_bits_per_l
     return num_bits;
 }
 
-void Bitvector::concatenateBitvectors(const std::vector<std::vector<word_t> >& bitvector_per_level, 
+inline void Bitvector::concatenateBitvectors(const std::vector<std::vector<word_t> >& bitvector_per_level, 
 				      const std::vector<position_t>& num_bits_per_level, 
 				      const level_t start_level, 
 				      const level_t end_level/* non-inclusive */) {

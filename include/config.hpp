@@ -5,7 +5,8 @@
 #include <cstring>
 #include <string>
 
-namespace surf {
+namespace surf
+{
 
 typedef uint32_t level_t;
 typedef uint32_t position_t;
@@ -28,33 +29,39 @@ static const int kHashShift = 7;
 
 static const int kCouldBePositive = 2018; // used in suffix comparison
 
-enum SuffixType {
+enum SuffixType
+{
     kNone = 0,
     kHash = 1,
     kReal = 2,
     kMixed = 3
 };
 
-void align(char*& ptr) {
-    ptr = reinterpret_cast<char*>((reinterpret_cast<uint64_t>(ptr) + 7) & ~(static_cast<uint64_t>(7)));
+inline void align(char *& ptr)
+{
+    ptr = reinterpret_cast<char *>((reinterpret_cast<uint64_t>(ptr) + 7) & ~(static_cast<uint64_t>(7)));
 }
 
-void sizeAlign(position_t& size) {
+inline void sizeAlign(position_t & size)
+{
     size = (size + 7) & ~(static_cast<position_t>(7));
 }
 
-void sizeAlign(uint64_t& size) {
+inline void sizeAlign(uint64_t & size)
+{
     size = (size + 7) & ~(static_cast<uint64_t>(7));
 }
 
-std::string uint64ToString(const uint64_t word) {
+inline std::string uint64ToString(const uint64_t word)
+{
     uint64_t endian_swapped_word = __builtin_bswap64(word);
-    return std::string(reinterpret_cast<const char*>(&endian_swapped_word), 8);
+    return std::string(reinterpret_cast<const char *>(&endian_swapped_word), 8);
 }
 
-uint64_t stringToUint64(const std::string& str_word) {
+inline uint64_t stringToUint64(const std::string & str_word)
+{
     uint64_t int_word = 0;
-    memcpy(reinterpret_cast<char*>(&int_word), str_word.data(), 8);
+    memcpy(reinterpret_cast<char *>(&int_word), str_word.data(), 8);
     return __builtin_bswap64(int_word);
 }
 
